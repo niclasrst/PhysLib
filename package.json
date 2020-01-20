@@ -1,0 +1,26 @@
+{
+	"name": "fuesikformeln",
+	"version": "0.0.1",
+	"description": "interactive physics formulary",
+	"main": "index.js",
+	"dependencies": {
+		"mathjs": "^6.5.0"
+	},
+	"devDependencies": {},
+	"scripts": {
+		"test": "node library.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/niclasrst/FuesikFormeln.git"
+	},
+	"keywords": [
+		"js"
+	],
+	"author": "Niclas R.",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/niclasrst/FuesikFormeln/issues"
+	},
+	"homepage": "https://github.com/niclasrst/FuesikFormeln#readme"
+}
