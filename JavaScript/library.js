@@ -1,6 +1,10 @@
+
+// TODO:
+// - DivFormulas durch MulFormulas ersetzen
+// - Gleichsetzen mehrerer Größen ermöglichen
+
 const math = require('mathjs');
 
-// let treePath = [];
 
 class Given {
 	constructor (quantity, value) {
@@ -20,10 +24,9 @@ class Quantity {
 }
 
 class Parent {
-	constructor (quantity, formulaID, operator) {
+	constructor (quantity, formulaID) {
 		this.quantity = quantity;
 		this.formulaID = formulaID;
-		this.operator = operator;
 	}
 
 	getConnectingFormula = () => { return eval(this.quantity).formulas[this.formulaID]; }
@@ -165,23 +168,31 @@ class PowFormula {
 	}
 }
 
-let W_el, F_el, E_el, l, q, mgs, m, g, s;
+let F_el, E_el, l, q, mgs, m, g, s;
 
 
-{ 	m = new Quantity (  // Quantities
-		'Masse',
-		'kg',
+{	c0_5 = new Quantity (
+		'0.5',
 		undefined,
+		0.5,
 		[],
-		[new Parent('mgs', 0, 'mul')]
+		[new Parent('W_kin', 0)]
 	);
 
-	g = new Quantity (
-		'Fallbeschleunigung',
-		'm/s²',
+	c2 = new Quantity (
+		'2',
+		undefined,
+		2,
+		[],
+		[new Parent('vv', 0)]
+	);
+	
+	t = new Quantity (
+		'Zeit',
+		's',
 		undefined,
 		[],
-		[new Parent('mgs', 0, 'mul')]
+		[new Parent('v', 0)]
 	);
 		
 	s = new Quantity (
@@ -189,7 +200,39 @@ let W_el, F_el, E_el, l, q, mgs, m, g, s;
 		'm',
 		undefined,
 		[],
-		[new Parent('mgs', 0, 'mul')]
+		[new Parent('mgs', 0)]
+	);
+		
+	v = new Quantity (
+		'Geschwindigkeit',
+		'm/s',
+		undefined,
+		[new DivFormula('v', s, t)],
+		[new Parent('vv', 0)]
+	);
+
+	vv = new Quantity (
+		'v * v',
+		undefined,
+		undefined,
+		[new PowFormula('vv', v, c2)],
+		[new Parent('W_kin', 0)]
+	);
+
+ 	m = new Quantity (
+		'Masse',
+		'kg',
+		undefined,
+		[],
+		[new Parent('mgs', 0)]
+	);
+
+	g = new Quantity (
+		'Fallbeschleunigung',
+		'm/s²',
+		undefined,
+		[],
+		[new Parent('mgs', 0)]
 	);
 
 	l = new Quantity (
@@ -197,23 +240,31 @@ let W_el, F_el, E_el, l, q, mgs, m, g, s;
 		'm',
 		undefined,
 		[],
-		[new Parent('F_el', 0, 'div2')]
+		[new Parent('F_el', 0)]
 	);
 
-	q = new Quantity (
-		'',
-		'',
+	Q = new Quantity (
+		'elektrische Ladung',
+		'C',
 		undefined,
 		[],
-		[new Parent('F_el', 1, 'mul')]
+		[new Parent('F_el', 1), new Parent('W_el', 1)]
 	);
+
+	U = new Quantity (
+		'elektrische Spannung',
+		'V',
+		undefined,
+		[],
+		[new Parent('W_el', 1)]
+	)
 		
 	mgs = new Quantity (
 		'm * g * s',
 		undefined,
 		undefined,
 		[new MulFormula('mgs', [m, g, s])],
-		[new Parent('F_el', 0, 'div1')]
+		[new Parent('F_el', 0)]
 	);
 
 	E_el = new Quantity (
@@ -221,24 +272,32 @@ let W_el, F_el, E_el, l, q, mgs, m, g, s;
 		'N/C oder V/m',
 		undefined,
 		[],
-		[new Parent('F_el', 1, 'mul')]
+		[new Parent('F_el', 1)]
 	);
 
 	F_el = new Quantity (
 		'elektrishce Feldkraft',
 		'N',
 		undefined,
-		[new DivFormula('F_el', mgs, l), new MulFormula('F_el', [E_el, q])],
-		[new Parent('W_el', 0, 'mul')]
+		[new DivFormula('F_el', mgs, l), new MulFormula('F_el', [E_el, Q])],
+		[new Parent('W_el', 0)]
 	);
 
 	W_el = new Quantity (
 		'elektrische Energie',
 		'J',
 		undefined,
-		[new MulFormula('W_el', [F_el, s])],
+		[new MulFormula('W_el', [F_el, s]), new MulFormula('W_el', [Q, U])],
 		[]	
 	);
+
+	W_kin = new Quantity (
+		'kinetische Energie',
+		'J',
+		undefined,
+		[new MulFormula('W_kin', [c0_5, m, vv])],
+		[]
+	)
 }
 	
 function assignValues(given) {
@@ -250,6 +309,8 @@ function assignValues(given) {
 function getSolution(given, searched) {
 
 	for (i = 0; i < givenArr.length; i++) { // for every given
+
+		console.log('given: ' + given[i].quantity.name)
 
 		if (given[i].quantity.parents.length > 0) { // if given has parents
 			
@@ -273,6 +334,8 @@ function getSolution(given, searched) {
 						}
 					}
 				} else { // if the parent is unknown
+
+					console.log(givenParentFormula);
 					
 					if (givenParentFormula.unknownSubQuantities() == 0) { // if all subQuantities of parentFormula are known
 						
@@ -312,8 +375,8 @@ function getSolution(given, searched) {
 }
 
 
-let givenArr = [new Given(m, 2), new Given(g, 3), new Given(W_el, 4), new Given(F_el, 5)];
-let searched = l;
+let givenArr = [new Given(W_el, 4), new Given(Q, 5)];
+let searched = U;
 
 assignValues(givenArr);
 
