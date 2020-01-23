@@ -90,7 +90,7 @@ class AddFormula {
 			for (var i in this.subQuantities) {
 				calc += this.subQuantities[i].value;
 			}
-			unknownQuantity.value =  calc;
+			unknownQuantity.value = calc;
 		} else if (this.subQuantities.includes(unknownQuantity)) {
 			let calc = this.parentQuantity.value;
 			for (var i in this.subQuantities) {
@@ -98,7 +98,7 @@ class AddFormula {
 					calc -= this.subQuantities[i].value;
 				}
 			}
-			unknownQuantity.value =  calc;
+			unknownQuantity.value = calc;
 		} else {
 			throw new Error('Die angegebene Größe ' + unknownQuantity.name + ' ist nicht in der AddFormula ' + this.parentQuantity + ' vorhanden.')
 		}
@@ -128,9 +128,38 @@ class DivFormula {
 		} else if (unknownQuantity == this.dividendQuantity) {
 			unknownQuantity.value = eval(this.parentQuantity).value * eval(this.divisorQuantity).value;
 		} else if (unknownQuantity == this.divisorQuantity) {
-			unknownQuantity.value =  eval(this.dividendQuantity).value / eval(this.parentQuantity).value;
+			unknownQuantity.value = eval(this.dividendQuantity).value / eval(this.parentQuantity).value;
 		} else {
 			throw new Error('Die angegebene Größe ' + unknownQuantity.name + ' ist nicht in der DivFormula ' + this.parentQuantity + ' vorhanden.')
+		}
+	}
+}
+
+class EqlFormula {
+	constructor(parentQuantity, subQuantities) {
+		this.parentQuantity = parentQuantity;
+		this.subQuantities = subQuantities;
+	}
+	getOperator = () => { return 'eql' }
+	unknownSubQuantities = () => {
+		let count = 0;
+		for (var i in this.subQuantities) {
+			if (this.subQuantities[i] == unknown) { count++; }
+		}
+		return count;
+	}
+	getUnknownSubQuantity = () => {
+		for (var i in this.subQuantities[i]) {
+			if (this.subQuantities[i] == undefined) { return this.subQuantities[i]; }
+		}
+	}
+	calculateAndSetValue = (unknownQuantity) => {
+		if (unknownQuantity == this.parentQuantity) {
+			eval(this.parentQuantity).value = this.subQuantities[i].value;
+		} else if (this.subQuantities.includes(unknwnQuantity)) {
+			unknownQuantity.value = eval(this.parentQuantity).value;
+		} else {
+			throw new Error('Die angegebene Größe ' + unknownQuantity.name + ' ist nicht in der EqlFormula ' + this.parentQuantity + ' vorhanden.')
 		}
 	}
 }
@@ -156,10 +185,10 @@ let W_el, F_el, E_el, l, q, mgs, m, g, s;
 		
 	s = new Quantity (
 		'Strecke', 										// name
-		'm',			 										// unit
+		'm',			 								// unit
 		undefined, 										// wert
-		[],				 										// formulas
-		[new Parent('mgs', 0, 'mul')] // parents
+		[],				 								// formulas
+		[new Parent('mgs', 0, 'mul')] 					// parents
 	);
 
 	l = new Quantity (
@@ -217,58 +246,49 @@ function assignValues(given) {
 	}
 }
 
-
 function getSolution(given, searched) {
 
 	for (i = 0; i < givenArr.length; i++) { // for every given
-		
-		console.log('given: ' + given[i][0].name);
-		
-		if (given[i][0].formulas.length == 0) { // if given does not have formulas
+
+		if (given[i][0].parents.length > 0) { // if given has parents
 			
-			if (given[i][0].parents.length > 0) { // if given has parents
+			let givenParents = given[i][0].parents;
+			
+			for (var j in givenParents) { // for every parent of given
 				
-				let givenParents = given[i][0].parents;
+				let givenParentFormula = givenParents[j].getConnectingFormula(); // givenParentFormula = connectingFormula from parent to given
 				
-				for (var j in givenParents) { // for every parent of given
+				if (eval(givenParentFormula.parentQuantity).value != undefined) { // if the parent is known
 					
-					let givenParentFormula = givenParents[j].getConnectingFormula(); // givenParentFormula = connectingFormula from parent to given
-					
-					if (eval(givenParentFormula.parentQuantity).value != undefined) { // if the parent is known
+					if (givenParentFormula.unknownSubQuantities() == 1) { // if there is only one unknown subQuantity in the formula 
+
+						let unknownSubQuantity = givenParentFormula.getUnknownSubQuantity();
 						
-						if (givenParentFormula.unknownSubQuantities() == 1) { // if there is only one unknown subQuantity in the formula 
-							
-							let unknownSubQuantity = givenParentFormula.getUnknownSubQuantity();
-							
-							givenParentFormula.calculateAndSetValue(unknownSubQuantity); // calc and set value in Quantity
-							console.log('value: ' + unknownSubQuantity.value);
-							givenArr.push([unknownSubQuantity, unknownSubQuantity.value]); // add new known to givenArr
-							
-							if (unknownSubQuantity == searched) { // if the calculated Quantity is searched
-								// searchedNotFound = false;
-								return searched.value; // return searched value
-							}
+						givenParentFormula.calculateAndSetValue(unknownSubQuantity); // calc and set value in Quantity
+						givenArr.push([unknownSubQuantity, unknownSubQuantity.value]); // add new known to givenArr
+						
+						if (unknownSubQuantity == searched) { // if the calculated Quantity is searched
+							return unknownSubQuantity.value; // return searched value
 						}
-					} else { // if the parent is unknown
+					}
+				} else { // if the parent is unknown
+					
+					if (givenParentFormula.unknownSubQuantities() == 0) { // if all subQuantities of parentFormula are known
 						
-						if (givenParentFormula.unknownSubQuantities() == 0) { // if all subQuantities of parentFormula are known
-							
-							let unknownParentQuantity = eval(givenParentFormula.parentQuantity);
-							
-							givenParentFormula.calculateAndSetValue(unknownParentQuantity); // calc and set value in quantity
-							console.log('value: ' + unknownSubQuantity.value);
-							givenArr.push([unknownParentQuantity, unknownParentQuantity.value]); // add new known to givenArr
-							
-							if (unknownParentQuantity == searched) { // if the calculated Quantity is searched
-								// searchedNotFound = false;
-								return searched.value; // return searched value
-							}
+						let unknownParentQuantity = eval(givenParentFormula.parentQuantity);
+						
+						givenParentFormula.calculateAndSetValue(unknownParentQuantity); // calc and set value in quantity
+						givenArr.push([unknownParentQuantity, unknownParentQuantity.value]); // add new known to givenArr
+						
+						if (unknownParentQuantity == searched) { // if the calculated Quantity is searched
+							return unknownParentQuantity.value; // return searched value
 						}
 					}
 				}
 			}
-			
-		} else { // if given has formulas
+		}
+
+		if (given[i][0].formulas.length > 0) { // if given has formulas
 			
 			for (var j in given[i][0].formulas) { // for all formulas of given
 				
@@ -279,11 +299,10 @@ function getSolution(given, searched) {
 					let unknownSubQuantity = givenFormula.getUnknownSubQuantity();
 					
 					givenFormula.calculateAndSetValue(unknownSubQuantity); // calc and set value in Quantity
-					console.log('value: ' + unknownSubQuantity.value);
 					givenArr.push([unknownSubQuantity, unknownSubQuantity.value]); // add new known to givenArr
 					
 					if (unknownSubQuantity == searched) { // if the calculated Quantity is searched
-						return searched.value; // return searched value
+						return unknownSubQuantity.value; // return searched value
 					}
 				}
 			}
@@ -292,23 +311,21 @@ function getSolution(given, searched) {
 }
 
 
-// console.log('solution: ' + getSolution([[m, 2], [g, 3], [s, - 4]], mgs));
-
-
-let givenArr = [[m, 2], [g, 3], [F_el, 4], [l, 5]];
-let searched = W_el;
+let givenArr = [[m, 1], [g, 2], [s, 0]];
+let searched = mgs;
 
 assignValues(givenArr);
 
-// console.log(givenArr);
+let prev = givenArr.length, curr = 0;
 
 function run(given, searched) {
-	let prev = [], curr = [null];
-	if (prev.length == curr.length) { return 'why are you gay?'; }
-	prev = given;
+	if (prev == curr) { return 'this problem is gay'; }
+	prev = given.length;
 	let val = getSolution(given, searched);
-	if (val) { return val; }
-  curr = given;
+	if (val === Infinity) { return 'who devided your IQ by zero?' }
+	if (val !== undefined) { return val; }
+	curr = given.length;
+	return run(given, searched);
 }
 
 console.log('solution: ' + run(givenArr, searched));
