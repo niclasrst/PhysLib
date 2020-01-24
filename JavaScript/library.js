@@ -1,6 +1,5 @@
 
 // TODO:
-// - DivFormulas durch MulFormulas ersetzen
 // - Gleichsetzen mehrerer Größen ermöglichen
 
 const math = require('mathjs');
@@ -14,7 +13,8 @@ class Given {
 }
 
 class Quantity {
-	constructor (name, unit, value, formulas, parents) {
+	constructor (symbol, name, unit, value, formulas, parents) {
+		this.symbol = symbol;
 		this.name = name;
 		this.unit = unit;
 		this.value = value;
@@ -50,17 +50,15 @@ class MulFormula {
 		}
 	}
 	calculateAndSetValue = (unknownQuantity) => {
-
 		this.parentQuantity = eval(this.parentQuantity);
-
-		if (unknownQuantity == eval(this.parentQuantity)) {
+		if (unknownQuantity == this.parentQuantity) {
 			let calc = 1;
 			for (var i in this.subQuantities) {
 				calc *= this.subQuantities[i].value;
 			}
-			unknownQuantity.value =  calc;
+			unknownQuantity.value = calc;
 		} else if (this.subQuantities.includes(unknownQuantity)) {
-			let calc = eval(this.parentQuantity).value;
+			let calc = this.parentQuantity.value;
 			for (var i in this.subQuantities) {
 				if (this.subQuantities[i].value != undefined) {
 					calc /= this.subQuantities[i].value;
@@ -116,6 +114,7 @@ class DivFormula {
 		this.parentQuantity = parentQuantity;
 		this.dividendQuantity = dividendQuantity;
 		this.divisorQuantity = divisorQuantity;
+		this.subQuantities = [dividendQuantity, divisorQuantity];
 	}
 	unknownSubQuantities = () => {
 		let count = 0;
@@ -171,7 +170,26 @@ class PowFormula {
 let F_el, E_el, l, q, mgs, m, g, s;
 
 
-{	c0_5 = new Quantity (
+{	c0 = new Quantity (
+		'c0',
+		'0',
+		undefined,
+		0,
+		[],
+		[]
+	);
+
+	c1 = new Quantity (
+		'c1',
+		'1',
+		undefined,
+		1,
+		[],
+		[]
+	);
+
+	c0_5 = new Quantity (
+		'c0_5',
 		'0.5',
 		undefined,
 		0.5,
@@ -180,38 +198,43 @@ let F_el, E_el, l, q, mgs, m, g, s;
 	);
 
 	c2 = new Quantity (
+		'c2',
 		'2',
 		undefined,
 		2,
 		[],
 		[new Parent('vv', 0)]
 	);
-	
+
 	t = new Quantity (
+		't',
 		'Zeit',
 		's',
 		undefined,
 		[],
 		[new Parent('v', 0)]
 	);
-		
+
 	s = new Quantity (
+		's',
 		'Strecke',
 		'm',
 		undefined,
 		[],
 		[new Parent('mgs', 0)]
 	);
-		
+
 	v = new Quantity (
-		'Geschwindigkeit',
-		'm/s',
-		undefined,
-		[new DivFormula('v', s, t)],
-		[new Parent('vv', 0)]
+		'v',							// symbol (always the same as object name)
+		'Geschwindigkeit',				// name
+		'm/s',							// unit
+		undefined,						// value
+		[new DivFormula('v', s, t)],	// formulas( aka children)
+		[new Parent('vv', 0)]			// parents
 	);
 
 	vv = new Quantity (
+		'vv',
 		'v * v',
 		undefined,
 		undefined,
@@ -220,6 +243,7 @@ let F_el, E_el, l, q, mgs, m, g, s;
 	);
 
  	m = new Quantity (
+		'm',
 		'Masse',
 		'kg',
 		undefined,
@@ -228,6 +252,7 @@ let F_el, E_el, l, q, mgs, m, g, s;
 	);
 
 	g = new Quantity (
+		'g',
 		'Fallbeschleunigung',
 		'm/s²',
 		undefined,
@@ -236,7 +261,8 @@ let F_el, E_el, l, q, mgs, m, g, s;
 	);
 
 	l = new Quantity (
-		'Länge', 
+		'l',
+		'Länge',
 		'm',
 		undefined,
 		[],
@@ -244,6 +270,7 @@ let F_el, E_el, l, q, mgs, m, g, s;
 	);
 
 	Q = new Quantity (
+		'Q',
 		'elektrische Ladung',
 		'C',
 		undefined,
@@ -252,14 +279,16 @@ let F_el, E_el, l, q, mgs, m, g, s;
 	);
 
 	U = new Quantity (
+		'U',
 		'elektrische Spannung',
 		'V',
 		undefined,
 		[],
 		[new Parent('W_el', 1)]
 	)
-		
+
 	mgs = new Quantity (
+		'mgs',
 		'm * g * s',
 		undefined,
 		undefined,
@@ -268,6 +297,7 @@ let F_el, E_el, l, q, mgs, m, g, s;
 	);
 
 	E_el = new Quantity (
+		'E_el',
 		'Elektrische Feldstärke',
 		'N/C oder V/m',
 		undefined,
@@ -276,6 +306,7 @@ let F_el, E_el, l, q, mgs, m, g, s;
 	);
 
 	F_el = new Quantity (
+		'F_el',
 		'elektrishce Feldkraft',
 		'N',
 		undefined,
@@ -284,68 +315,81 @@ let F_el, E_el, l, q, mgs, m, g, s;
 	);
 
 	W_el = new Quantity (
+		'W_el',
 		'elektrische Energie',
 		'J',
 		undefined,
 		[new MulFormula('W_el', [F_el, s]), new MulFormula('W_el', [Q, U])],
-		[]	
+		[]
 	);
 
 	W_kin = new Quantity (
+		'W_kin',
 		'kinetische Energie',
 		'J',
 		undefined,
 		[new MulFormula('W_kin', [c0_5, m, vv])],
 		[]
-	)
-}
-	
+	)}
+
+
 function assignValues(given) {
 	for (var i in given) {
 		given[i].quantity.value = given[i].value;
 	}
 }
 
+function assignEquations(equations) {
+	for (var i in equations) {
+		let formulas = eval(equations[i].parentQuantity).formulas;
+		formulas.push(equations[i]);
+		givenArr.push(new Given(eval(equations[i].parentQuantity), undefined));
+		let subQuantities = equations[i].subQuantities;
+		for (var j in subQuantities) {
+			subQuantities[j].parents.push(new Parent(equations[i].parentQuantity, formulas.length - 1));
+			givenArr.push(new Given(subQuantities[j], subQuantities[j].value));
+		}
+	}
+}
+
 function getSolution(given, searched) {
 
-	for (i = 0; i < givenArr.length; i++) { // for every given
-
-		console.log('given: ' + given[i].quantity.name)
+	for (i = 0; i < given.length; i++) { // for each given
 
 		if (given[i].quantity.parents.length > 0) { // if given has parents
-			
+
 			let givenParents = given[i].quantity.parents;
-			
-			for (var j in givenParents) { // for every parent of given
-				
+
+			for (var j in givenParents) { // for each parent of given
+
 				let givenParentFormula = givenParents[j].getConnectingFormula();
-				
+
 				if (eval(givenParentFormula.parentQuantity).value != undefined) { // if the parent is known
-					
-					if (givenParentFormula.unknownSubQuantities() == 1) { // if there is only one unknown subQuantity in the formula 
+
+					if (givenParentFormula.unknownSubQuantities() == 1) { // if there is only one unknown subQuantity in the formula
 
 						let unknownSubQuantity = givenParentFormula.getUnknownSubQuantity();
-						
+
 						givenParentFormula.calculateAndSetValue(unknownSubQuantity); // calc and set value in Quantity
 						givenArr.push(new Given(unknownSubQuantity, unknownSubQuantity.value)); // add new known to givenArr
-						
+
+
 						if (unknownSubQuantity == searched) { // if the calculated Quantity is searched
-							return unknownSubQuantity.value; // return searched value
+							return unknownSubQuantity; // return searched subQuantity
 						}
 					}
 				} else { // if the parent is unknown
 
-					console.log(givenParentFormula);
-					
+
 					if (givenParentFormula.unknownSubQuantities() == 0) { // if all subQuantities of parentFormula are known
-						
+
 						let unknownParentQuantity = eval(givenParentFormula.parentQuantity);
-						
+
 						givenParentFormula.calculateAndSetValue(unknownParentQuantity); // calc and set value in quantity
 						givenArr.push(new Given(unknownParentQuantity, unknownParentQuantity.value)); // add new known to givenArr
-						
+
 						if (unknownParentQuantity == searched) { // if the calculated Quantity is searched
-							return unknownParentQuantity.value; // return searched value
+							return unknownParentQuantity; // return searched subQuantity
 						}
 					}
 				}
@@ -353,41 +397,44 @@ function getSolution(given, searched) {
 		}
 
 		if (given[i].quantity.formulas.length > 0) { // if given has formulas
-			
-			for (var j in given[i].quantity.formulas) { // for all formulas of given
-				
+
+			for (var j in given[i].quantity.formulas) { // for each formula of given
+
 				let givenFormula = given[i].quantity.formulas[j];
-				
-				if (givenFormula.unknownSubQuantities() == 1) { // if given has only one unknown subQuantity
-					
+
+				if (givenFormula.unknownSubQuantities() == 1) { // if givenFormula has only one unknown subQuantity
+
 					let unknownSubQuantity = givenFormula.getUnknownSubQuantity();
-					
+
 					givenFormula.calculateAndSetValue(unknownSubQuantity); // calc and set value in Quantity
 					givenArr.push(new Given(unknownSubQuantity, unknownSubQuantity.value)); // add new known to givenArr
-					
+
 					if (unknownSubQuantity == searched) { // if the calculated Quantity is searched
-						return unknownSubQuantity.value; // return searched value
+						return unknownSubQuantity; // return searched subQuantity
 					}
 				}
 			}
 		}
+		// console.log('GIVEN: ' + given[i].quantity.name + ': ' + given[i].value);
 	}
 }
 
 
-let givenArr = [new Given(W_el, 4), new Given(Q, 5)];
-let searched = U;
+let givenArr = [new Given(v, 2), new Given(U, 3), new Given(Q, 4)];
+let eqtArr = [new AddFormula('W_el', [c0, W_kin]), new AddFormula('W_kin', [c0, W_el])];
+let searched = m;
 
 assignValues(givenArr);
+assignEquations(eqtArr);
 
 let prev = givenArr.length, curr = 0;
 
 function run(given, searched) {
 	if (prev == curr) { return 'this problem is gay'; }
 	prev = given.length;
-	let val = getSolution(given, searched);
-	if (val === Infinity) { return 'who devided your IQ by zero?' }
-	if (val !== undefined) { return 'solution: ' + val; }
+	let solution = getSolution(given, searched);
+	if (solution === Infinity) { return 'who devided your IQ by zero?' }
+	if (solution !== undefined) { return 'solution: ' + solution.symbol + ' = ' + solution.value + ' ' + solution.unit; }
 	curr = given.length;
 	return run(given, searched);
 }
