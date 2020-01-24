@@ -1,7 +1,3 @@
-
-// TODO:
-// - Gleichsetzen mehrerer Größen ermöglichen
-
 const math = require('mathjs');
 
 
@@ -197,6 +193,8 @@ let F_el, E_el, l, q, mgs, m, g, s;
 		[new Parent('W_kin', 0)]
 	);
 
+	u_p_2 = new 
+
 	c2 = new Quantity (
 		'c2',
 		'2',
@@ -353,41 +351,25 @@ function assignEquations(equations) {
 }
 
 function getSolution(given, searched) {
-
 	for (i = 0; i < given.length; i++) { // for each given
-
 		if (given[i].quantity.parents.length > 0) { // if given has parents
-
 			let givenParents = given[i].quantity.parents;
-
 			for (var j in givenParents) { // for each parent of given
-
 				let givenParentFormula = givenParents[j].getConnectingFormula();
-
 				if (eval(givenParentFormula.parentQuantity).value != undefined) { // if the parent is known
-
 					if (givenParentFormula.unknownSubQuantities() == 1) { // if there is only one unknown subQuantity in the formula
-
 						let unknownSubQuantity = givenParentFormula.getUnknownSubQuantity();
-
 						givenParentFormula.calculateAndSetValue(unknownSubQuantity); // calc and set value in Quantity
 						givenArr.push(new Given(unknownSubQuantity, unknownSubQuantity.value)); // add new known to givenArr
-
-
 						if (unknownSubQuantity == searched) { // if the calculated Quantity is searched
 							return unknownSubQuantity; // return searched subQuantity
 						}
 					}
 				} else { // if the parent is unknown
-
-
 					if (givenParentFormula.unknownSubQuantities() == 0) { // if all subQuantities of parentFormula are known
-
 						let unknownParentQuantity = eval(givenParentFormula.parentQuantity);
-
 						givenParentFormula.calculateAndSetValue(unknownParentQuantity); // calc and set value in quantity
 						givenArr.push(new Given(unknownParentQuantity, unknownParentQuantity.value)); // add new known to givenArr
-
 						if (unknownParentQuantity == searched) { // if the calculated Quantity is searched
 							return unknownParentQuantity; // return searched subQuantity
 						}
@@ -395,27 +377,19 @@ function getSolution(given, searched) {
 				}
 			}
 		}
-
 		if (given[i].quantity.formulas.length > 0) { // if given has formulas
-
 			for (var j in given[i].quantity.formulas) { // for each formula of given
-
 				let givenFormula = given[i].quantity.formulas[j];
-
 				if (givenFormula.unknownSubQuantities() == 1) { // if givenFormula has only one unknown subQuantity
-
 					let unknownSubQuantity = givenFormula.getUnknownSubQuantity();
-
 					givenFormula.calculateAndSetValue(unknownSubQuantity); // calc and set value in Quantity
 					givenArr.push(new Given(unknownSubQuantity, unknownSubQuantity.value)); // add new known to givenArr
-
 					if (unknownSubQuantity == searched) { // if the calculated Quantity is searched
 						return unknownSubQuantity; // return searched subQuantity
 					}
 				}
 			}
 		}
-		// console.log('GIVEN: ' + given[i].quantity.name + ': ' + given[i].value);
 	}
 }
 
