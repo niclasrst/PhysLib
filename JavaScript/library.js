@@ -421,7 +421,7 @@ function getSolution(given, searched) {
 
 
 let givenArr = [new Given(v, 2), new Given(U, 3), new Given(Q, 4)];
-let eqtArr = [new AddFormula('W_el', [c0, W_kin]), new AddFormula('W_kin', [c0, W_el])];
+let eqtArr = [new AddFormula('W_kin', [c0, W_el]), new AddFormula('W_el', [c0, W_kin])];
 let searched = m;
 
 assignValues(givenArr);
@@ -433,7 +433,7 @@ function run(given, searched) {
 	if (prev == curr) { return 'this problem is gay'; }
 	prev = given.length;
 	let solution = getSolution(given, searched);
-	if (solution === Infinity) { return 'who devided your IQ by zero?' }
+	if (solution === Infinity || isNaN(solution)) { return 'who divided your IQ by zero?' }
 	if (solution !== undefined) { return 'solution: ' + solution.symbol + ' = ' + solution.value + ' ' + solution.unit; }
 	curr = given.length;
 	return run(given, searched);
